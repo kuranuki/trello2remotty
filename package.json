@@ -1,0 +1,14 @@
+{
+  "name": "trello-gcp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "unirest": "^0.5.1"
+  },
+  "files": [
+    "index.js",
+    "package.json",
+    "users.json"
+  ]
+}

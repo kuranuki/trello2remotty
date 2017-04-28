@@ -1,0 +1,10 @@
+{
+  "kuranuki(as trello-id)": {
+    "remotty_token": "xxxxxx",
+    "participation_id": "xxxxxx"
+  },
+  "tsukun": {
+    "remotty_token": "xxxxxxx",
+    "participation_id": "xxxxxx"
+  }
+}
