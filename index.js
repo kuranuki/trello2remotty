@@ -12,7 +12,7 @@ function postRemotty(token, participation_id, comment) {
   const data = {
     "comment": {
       "all":false,
-      "show_log":true,
+      "show_log":false,
       "content":comment
     }
   };
@@ -27,17 +27,30 @@ function postRemotty(token, participation_id, comment) {
 
 function createComment(data) {
 
-  const username = data.action.memberCreator.username;
-  let type = data.action.type;
-
-  switch (type) {
+  let message = "";
+  switch (data.action.type) {
     case "createCard":
-      type += `(${data.action.data.card.name})`;
+      message = `カードを新規追加！(${data.action.data.card.name})`;
       break;
+    case "updateCard":
+      if (data.action.data.old.pos) return null; // 場所移動は無視
+
+      if (data.action.data.card.closed) {
+        message = `カードをアーカイブ！(${data.action.data.card.name})`;
+      } else {
+        message = `カード状態を更新！(${data.action.data.card.name})`;
+      }
+      break;
+    case "commentCard":
+      message = `カードにコメント「 ${data.action.data.text} 」(${data.action.data.card.name})`;
+      break;
+    default:
+      return null;
   }
 
+  const username = data.action.memberCreator.username;
   const borad = data.model;
-  return `Trello: ${username} - ${type} at ${borad.name}( ${borad.url} )`;
+  return `Trello: ${username} - ${message} at ${borad.name}( ${borad.url} )`;
 }
 
 /**
@@ -60,8 +73,9 @@ exports.execute = function execute (req, res) {
     const users = JSON.parse(fs.readFileSync('./users.json', 'utf8'));
   
     const user = users[req.body.action.memberCreator.username];
-    if (user) {
-      postRemotty(user.remotty_token, user.participation_id , createComment(req.body));
+    const comment = createComment(req.body);
+    if (user && comment) {
+      postRemotty(user.remotty_token, user.participation_id, comment);
     }
     res.status(200).send();
   } else {
