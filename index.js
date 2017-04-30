@@ -1,4 +1,4 @@
-function postRemotty(token, participation_id, comment) {
+function postRemotty(token, participation_id, data) {
   const unirest = require("unirest");
   
   const uri = `https://www.remotty.net/api/v1/rooms/participations/${participation_id}/comments`;
@@ -9,14 +9,7 @@ function postRemotty(token, participation_id, comment) {
     "Connection": "kee-alive",
     "Host": "www.remotty.net"
   };
-  const data = {
-    "comment": {
-      "all":false,
-      "show_log":false,
-      "content":comment
-    }
-  };
-  
+
   unirest.post(uri)
   .headers(headers)
   .send(data)
@@ -27,6 +20,7 @@ function postRemotty(token, participation_id, comment) {
 
 function createComment(data) {
 
+  let show_log = false;
   let message = "";
   switch (data.action.type) {
     case "createCard":
@@ -42,6 +36,7 @@ function createComment(data) {
       }
       break;
     case "commentCard":
+      show_log = true;
       message = `カードにコメント「 ${data.action.data.text} 」(${data.action.data.card.name})`;
       break;
     default:
@@ -50,7 +45,14 @@ function createComment(data) {
 
   const username = data.action.memberCreator.username;
   const borad = data.model;
-  return `Trello: ${username} - ${message} at ${borad.name}( ${borad.url} )`;
+
+  return {
+    "comment": {
+      "all": false,
+      "show_log": show_log,
+      "content": `Trello: ${username} - ${message} at ${borad.name}( ${borad.url} )`
+    }
+  };
 }
 
 /**
@@ -64,8 +66,10 @@ exports.execute = function execute (req, res) {
   // res.writeHead(200, {'Content-Type': 'application/json'});
   // res.status(200).send();
 
-  console.log(`baseUrl=${req.baseUrl}, path=${req.path}, query=${JSON.stringify(req.query)}`);
-  console.log(JSON.stringify(req.body, null, "  "));
+  console.log(`baseUrl=${req.baseUrl}, path=${req.path},
+                query=${JSON.stringify(req.query)},
+                body=${JSON.stringify(req.body, null, "  ")}`);
+//  console.log(JSON.stringify(req.body, null, "  "));
 
   if (Object.keys(req.body).length > 0) {
 
@@ -73,9 +77,9 @@ exports.execute = function execute (req, res) {
     const users = JSON.parse(fs.readFileSync('./users.json', 'utf8'));
   
     const user = users[req.body.action.memberCreator.username];
-    const comment = createComment(req.body);
-    if (user && comment) {
-      postRemotty(user.remotty_token, user.participation_id, comment);
+    const data = createComment(req.body);
+    if (user && data) {
+      postRemotty(user.remotty_token, user.participation_id, data);
     }
     res.status(200).send();
   } else {
